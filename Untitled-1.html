@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Rapor TK Gelora Bangsa</title>
+    <style>
+        :root {
+            --primary-color: #333;
+            --border-color: #000;
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Bagian Form Input */
+        .editor-panel {
+            width: 30%;
+            background: #fff;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #ccc;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .editor-panel h2 { font-family: Arial, sans-serif; color: #444; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-family: Arial, sans-serif; font-size: 12px; margin-bottom: 5px; font-weight: bold;}
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-print {
+            background: #007bff; color: white; border: none; padding: 10px 20px;
+            width: 100%; cursor: pointer; font-size: 16px; border-radius: 5px;
+            margin-top: 20px;
+        }
+        .btn-print:hover { background: #0056b3; }
+
+        /* Bagian Preview Rapor */
+        .preview-panel {
+            width: 70%;
+            background: #555;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        /* --- KERTAS A4 --- */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            padding: 20mm;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Elemen Grafis Rapor */
+        .text-center { text-align: center; }
+        .bold { font-weight: bold; }
+        .logo-tutwuri { width: 80px; margin-bottom: 10px; }
+        .logo-sekolah { width: 100px; margin: 10px 0; border-radius: 50%; }
+        .garuda { width: 100px; margin-bottom: 10px; }
+
+        h1, h2, h3 { margin: 5px 0; font-weight: bold; text-transform: uppercase; }
+        h1 { font-size: 18pt; }
+        h2 { font-size: 16pt; }
+        h3 { font-size: 14pt; }
+        p { margin: 5px 0; font-size: 12pt; }
+
+        /* Kotak Cover Page 1 */
+        .cover-box {
+            border: 3px solid black;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 50px auto;
+            width: 80%;
+            text-align: center;
+        }
+
+        /* Tabel Biodata Page 2 & 3 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 12pt;
+        }
+        .data-table td { padding: 5px; vertical-align: top; }
+        .data-table td:first-child { width: 30%; }
+        .data-table td:nth-child(2) { width: 2%; }
+
+        /* Tabel Penilaian Page 4 & 5 */
+        .nilai-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .nilai-table th, .nilai-table td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+        .nilai-table th { background-color: #f9f9f9; }
+        
+        .illustration-box {
+            height: 100px;
+            background: #f0f0f0;
+            border: 1px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 10pt;
+        }
+
+        /* Watermark Background (CSS Approximation) */
+        .watermark {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            opacity: 0.05;
+            z-index: 0;
+            pointer-events: none;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg/1200px-Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg.png'); /* Placeholder Tutwuri */
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+
+        /* Tanda Tangan */
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            page-break-inside: avoid;
+        }
+        .sig-block { text-align: center; width: 200px; }
+        .sig-space { height: 80px; }
+        .foto-box {
+            width: 3cm; height: 4cm; border: 1px solid black;
+            margin: 0 auto; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- PRINT STYLE --- */
+        @media print {
+            body { background: white; height: auto; overflow: visible; display: block; }
+            .editor-panel { display: none; }
+            .preview-panel { width: 100%; background: white; padding: 0; display: block; }
+            .page {
+                width: 100%; height: auto;
+                margin: 0; padding: 0 15mm; /* Margin cetak */
+                box-shadow: none;
+                page-break-after: always;
+            }
+            .page:last-child { page-break-after: auto; }
+            
+            /* Force backgrounds for colored elements if needed */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANEL KIRI: FORM INPUT -->
+    <div class="editor-panel">
+        <h2>Isi Data Rapor</h2>
+        <button class="btn-print" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+        <hr>
+
+        <h3>Halaman 1 (Cover)</h3>
+        <div class="form-group">
+            <label>Nama Anak Didik</label>
+            <input type="text" id="inputNama" placeholder="Nama Lengkap" oninput="updateData()">
+        </div>
+        <div class="form-group">
+            <label>NISN / NIS</label>
+            <input type="text" id="inputNis" placeholder="Contoh: 12345678 / 1234" oninput="updateData()">
+        </div>
+
+        <hr>
+        <h3>Halaman 2 (Identitas)</h3>
+        <div class="form-group">
+            <label>Nama TK</label>
+            <input type="text" id="inputTK" value="KB - TK GELORA BANGSA" oninput="updateData()">
+        </div>
+        <div class="form-group">
+            <label>Tahun Ajaran</label>
+            <input type="text" id="inputTahun" value="2024/2025" oninput="updateData()">
+        </div>
+
+        <hr>
+        <h3>Halaman 3 (Data Diri)</h3>
+        <div class="form-group">
+            <label>Nama Panggilan</label>
+            <input type="text" id="inputPanggilan" oninput="updateData()">
+        </div>
+        <div class="form-group">
+            <label>Tempat, Tanggal Lahir</label>
+            <input type="text" id="inputTTL" oninput="updateData()">
+        </div>
+        <div class="form-group">
+            <label>Nama Ayah</label>
+            <input type="text" id="inputAyah" oninput="updateData()">
+        </div>
+        <div class="form-group">
+            <label>Nama Ibu</label>
+            <input type="text" id="inputIbu" oninput="updateData()">
+        </div>
+
+        <hr>
+        <h3>Halaman 4 (Nilai)</h3>
+        <div class="form-group">
+            <label>Semester</label>
+            <select id="inputSemester" oninput="updateData()">
+                <option value="1 (Satu)">1 (Satu)</option>
+                <option value="2 (Dua)">2 (Dua)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Catatan Nilai Agama & Budi Pekerti</label>
+            <textarea id="inputAgama" rows="3" oninput="updateData()">Anak sudah mampu berdoa sebelum belajar...</textarea>
+        </div>
+        <div class="form-group">
+            <label>Catatan Jati Diri</label>
+            <textarea id="inputJatiDiri" rows="3" oninput="updateData()">Anak menunjukkan kemandirian dalam...</textarea>
+        </div>
+        
+        <hr>
+        <h3>Fisik & Kesehatan</h3>
+        <div class="form-group">
+            <label>Tinggi Badan (cm)</label>
+            <input type="text" id="inputTB" oninput="updateData()">
+        </div>
+        <div class="form-group">
+            <label>Berat Badan (kg)</label>
+            <input type="text" id="inputBB" oninput="updateData()">
+        </div>
+        
+        <hr>
+        <h3>Tanda Tangan</h3>
+        <div class="form-group">
+            <label>Tanggal Rapor</label>
+            <input type="text" id="inputTanggal" value="Jakarta, 24 Februari 2025" oninput="updateData()">
+        </div>
+        <div class="form-group">
+            <label>Nama Kepala Sekolah</label>
+            <input type="text" id="inputKepsek" value="Rina S.E" oninput="updateData()">
+        </div>
+    </div>
+
+    <!-- PANEL KANAN: PREVIEW A4 -->
+    <div class="preview-panel">
+
+        <!-- HALAMAN 1: COVER -->
+        <div class="page">
+            <div class="watermark"></div>
+            <div class="text-center" style="margin-top: 50px;">
+                <!-- Logo Tut Wuri Handayani Placeholder -->
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg/1200px-Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg.png" alt="Tut Wuri Handayani" class="logo-tutwuri">
+                
+                <h2 style="margin-top: 30px;">KB - TK GELORA BANGSA</h2>
+                <p>Jl. Kampung Baru Kubur Koja, Penjaringan</p>
+                <p class="bold">JAKARTA UTARA</p>
+
+                <!-- Logo Sekolah Placeholder -->
+                <div style="margin: 50px 0;">
+                     <!-- Gunakan URL logo sekolah asli jika ada, ini placeholder gambar bumi/anak -->
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRk4CqA_KjL3wVqCgTjT4hR9W0pXyZ5q5jX5g&s" alt="Logo Sekolah" class="logo-sekolah" style="width:150px; height:150px; object-fit:cover;">
+                </div>
+
+                <div class="cover-box">
+                    <h3>Nama Anak Didik</h3>
+                    <h2 style="margin: 30px 0;" class="viewNama">[Nama Anak]</h2>
+                    <p>NISN/NIS : <span class="viewNis">#N/A</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 2: IDENTITAS SEKOLAH -->
+        <div class="page">
+            <div class="watermark"></div>
+            <div class="text-center" style="margin-top: 30px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Garuda_Pancasila_Coat_of_Arms_of_Indonesia.svg/1200px-Garuda_Pancasila_Coat_of_Arms_of_Indonesia.svg.png" alt="Garuda" class="garuda">
+                
+                <h2 style="margin-top: 20px;">LAPORAN</h2>
+                <h2>ASESMEN CAPAIAN</h2>
+                <h2>PEMBELAJARAN ANAK DIDIK</h2>
+                <h2 style="margin-bottom: 50px;">TAMAN KANAK-KANAK</h2>
+            </div>
+
+            <table class="data-table" style="width: 80%; margin: 0 auto;">
+                <tr><td>Nama TK</td><td>:</td><td class="viewTK bold">KB - TK GELORA BANGSA</td></tr>
+                <tr><td>NPSN</td><td>:</td><td>69900048</td></tr>
+                <tr><td>Alamat</td><td>:</td><td>Jl. Kampung Baru Rt 10 Rw 15</td></tr>
+                <tr><td>Kelurahan</td><td>:</td><td>Penjaringan</td></tr>
+                <tr><td>Kecamatan</td><td>:</td><td>Penjaringan</td></tr>
+                <tr><td>Kabupaten/Kota</td><td>:</td><td>Jakarta Utara</td></tr>
+                <tr><td>Provinsi</td><td>:</td><td>DKI Jakarta</td></tr>
+                <tr><td>Email</td><td>:</td><td>gelorabangsaa@gmail.com</td></tr>
+            </table>
+        </div>
+
+        <!-- HALAMAN 3: DATA DIRI ANAK -->
+        <div class="page">
+            <div class="watermark"></div>
+            <div class="text-center"><h3>DATA DIRI ANAK</h3></div>
+            
+            <table class="data-table">
+                <tr><td>Nama Anak Didik</td><td>:</td><td class="viewNama">0</td></tr>
+                <tr><td>Nama Panggilan</td><td>:</td><td id="viewPanggilan">#N/A</td></tr>
+                <tr><td>NISN / NIS</td><td>:</td><td class="viewNis">#N/A</td></tr>
+                <tr><td>Tempat, Tanggal Lahir</td><td>:</td><td id="viewTTL">#N/A</td></tr>
+                <tr><td>Agama</td><td>:</td><td>Islam</td></tr>
+                <tr><td>Anak ke</td><td>:</td><td>1</td></tr>
+                
+                <tr><td colspan="3" class="bold" style="padding-top:20px;">Orang Tua / Wali</td></tr>
+                <tr><td>Ayah</td><td>:</td><td id="viewAyah">#N/A</td></tr>
+                <tr><td>Ibu</td><td>:</td><td id="viewIbu">#N/A</td></tr>
+                <tr><td>Pekerjaan Ayah</td><td>:</td><td>Wiraswasta</td></tr>
+                <tr><td>Pekerjaan Ibu</td><td>:</td><td>Ibu Rumah Tangga</td></tr>
+                
+                <tr><td colspan="3" class="bold" style="padding-top:20px;">Alamat Orang Tua / Wali</td></tr>
+                <tr><td>Jalan</td><td>:</td><td>Jl. Kampung Baru</td></tr>
+                <tr><td>Kelurahan</td><td>:</td><td>Penjaringan</td></tr>
+                <tr><td>Kota</td><td>:</td><td>Jakarta Utara</td></tr>
+            </table>
+
+            <div class="signature-section" style="margin-top: 80px;">
+                <div class="foto-box">
+                    Foto 3x4
+                </div>
+                <div class="sig-block">
+                    <p id="viewTanggal">Jakarta, 24 Februari 2025</p>
+                    <p>Kepala Sekolah<br>KB - TK Gelora Bangsa</p>
+                    <div class="sig-space"></div>
+                    <p class="bold text-underline" style="text-decoration: underline;" id="viewKepsek">Rina S.E</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 4: CAPAIAN PEMBELAJARAN (INTRAKURIKULER) -->
+        <div class="page">
+            <div class="watermark"></div>
+            <div class="text-center">
+                <h3>LAPORAN CAPAIAN PEMBELAJARAN</h3>
+                <h3 class="viewTK" style="text-decoration: underline;">KB/TK GELORA BANGSA</h3>
+                <h3>TAHUN <span id="viewTahun">2024/2025</span></h3>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin: 20px 0; border-bottom: 2px solid black; padding-bottom: 10px;">
+                <div style="width: 60%;">
+                    Nama : <span class="viewNama bold">0</span><br>
+                    Walikelas : <span class="bold">RINI</span>
+                </div>
+                <div style="width: 40%;">
+                    Kelompok : <span class="bold">KB</span><br>
+                    Semester : <span class="bold" id="viewSemester">1</span>
+                </div>
+            </div>
+
+            <p class="bold">A. INTRAKURIKULER</p>
+
+            <div style="border: 1px solid black; padding: 5px; margin-bottom: 10px;">
+                <p class="bold" style="background: #eee; padding: 5px; border-bottom: 1px solid black;">I. Nilai Agama Dan Budi Pekerti</p>
+                <div style="display: flex;">
+                    <div style="width: 70%; padding: 10px; font-size: 11pt;" id="viewAgama">
+                        #VALUE!
+                    </div>
+                    <div style="width: 30%; padding: 5px;">
+                        <div class="illustration-box">Foto Kegiatan</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid black; padding: 5px; margin-bottom: 10px;">
+                <p class="bold" style="background: #eee; padding: 5px; border-bottom: 1px solid black;">II. Jati Diri</p>
+                <div style="display: flex;">
+                    <div style="width: 70%; padding: 10px; font-size: 11pt;" id="viewJatiDiri">
+                        #VALUE!
+                    </div>
+                    <div style="width: 30%; padding: 5px;">
+                        <div class="illustration-box">Foto Kegiatan</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="border: 1px solid black; padding: 5px;">
+                <p class="bold" style="background: #eee; padding: 5px; border-bottom: 1px solid black;">III. Dasar Literasi & STEAM</p>
+                <div style="display: flex;">
+                    <div style="width: 70%; padding: 10px; font-size: 11pt;">
+                        Anak sudah mulai tertarik dengan buku cerita dan mampu membilang angka 1-10 dengan bantuan benda konkret.
+                    </div>
+                    <div style="width: 30%; padding: 5px;">
+                        <div class="illustration-box">Foto Kegiatan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 5: KESEHATAN & REFLEKSI -->
+        <div class="page">
+             <div class="watermark"></div>
+            <p class="bold">C. Tinggi dan Berat Badan</p>
+            <table class="nilai-table">
+                <tr class="text-center">
+                    <th rowspan="2" width="5%">No</th>
+                    <th rowspan="2">Aspek Yang Dinilai</th>
+                    <th colspan="2">Semester</th>
+                </tr>
+                <tr class="text-center">
+                    <th>1 (Satu)</th>
+                    <th>2 (Dua)</th>
+                </tr>
+                <tr>
+                    <td class="text-center">1</td>
+                    <td>Tinggi Badan</td>
+                    <td class="text-center"><span id="viewTB">0</span> Cm</td>
+                    <td class="text-center"> Cm</td>
+                </tr>
+                <tr>
+                    <td class="text-center">2</td>
+                    <td>Berat Badan</td>
+                    <td class="text-center"><span id="viewBB">0</span> Kg</td>
+                    <td class="text-center"> Kg</td>
+                </tr>
+                <tr>
+                    <td class="text-center">3</td>
+                    <td>Lingkar Kepala</td>
+                    <td class="text-center">- Cm</td>
+                    <td class="text-center"> Cm</td>
+                </tr>
+            </table>
+
+            <p class="bold">D. Kondisi Kesehatan</p>
+            <table class="nilai-table">
+                <tr>
+                    <th width="5%">No</th>
+                    <th>Aspek</th>
+                    <th>Keterangan</th>
+                </tr>
+                <tr><td class="text-center">1</td><td>Pendengaran</td><td>Baik</td></tr>
+                <tr><td class="text-center">2</td><td>Penglihatan</td><td>Baik</td></tr>
+                <tr><td class="text-center">3</td><td>Gigi</td><td>Bersih, tidak ada karies</td></tr>
+            </table>
+
+            <p class="bold">E. Refleksi Orang Tua</p>
+            <div style="border: 1px solid black; height: 100px; padding: 10px;">
+                <p style="color: #ccc; text-align: center; margin-top: 40px;">(Diisi oleh Orang Tua)</p>
+            </div>
+
+            <p class="bold" style="margin-top: 20px;">F. Tingkat Kehadiran</p>
+            <table class="nilai-table" style="width: 50%;">
+                <tr><td>Sakit</td><td>: 0 Hari</td></tr>
+                <tr><td>Izin</td><td>: 0 Hari</td></tr>
+                <tr><td>Tanpa Keterangan</td><td>: 0 Hari</td></tr>
+            </table>
+
+            <div class="signature-section">
+                <div class="sig-block">
+                    <p>Orang Tua / Wali</p>
+                    <div class="sig-space"></div>
+                    <p class="bold">(........................)</p>
+                </div>
+                <div class="sig-block">
+                    <p class="viewTanggalCopy">Jakarta, 24 Februari 2025</p>
+                    <p>Guru Kelas</p>
+                    <div class="sig-space"></div>
+                    <p class="bold text-underline">RINI</p>
+                </div>
+            </div>
+            <div class="signature-section" style="justify-content: center; margin-top: 10px;">
+                <div class="sig-block">
+                    <p>Mengetahui,</p>
+                    <p>Kepala KB - TK Gelora Bangsa</p>
+                    <div class="sig-space"></div>
+                    <p class="bold text-underline viewKepsekCopy">Rina S.E</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Fungsi untuk memetakan input ke preview secara realtime
+        function updateData() {
+            // Mapping ID Input -> Class/ID di Preview
+            const mappings = [
+                { input: 'inputNama', targetClass: 'viewNama' },
+                { input: 'inputNis', targetClass: 'viewNis' },
+                { input: 'inputTK', targetClass: 'viewTK' },
+                { input: 'inputTahun', targetId: 'viewTahun' },
+                { input: 'inputPanggilan', targetId: 'viewPanggilan' },
+                { input: 'inputTTL', targetId: 'viewTTL' },
+                { input: 'inputAyah', targetId: 'viewAyah' },
+                { input: 'inputIbu', targetId: 'viewIbu' },
+                { input: 'inputSemester', targetId: 'viewSemester' },
+                { input: 'inputAgama', targetId: 'viewAgama' },
+                { input: 'inputJatiDiri', targetId: 'viewJatiDiri' },
+                { input: 'inputTB', targetId: 'viewTB' },
+                { input: 'inputBB', targetId: 'viewBB' },
+                { input: 'inputTanggal', targetId: 'viewTanggal' },
+                { input: 'inputTanggal', targetClass: 'viewTanggalCopy' }, // Tanggal di halaman lain
+                { input: 'inputKepsek', targetId: 'viewKepsek' },
+                { input: 'inputKepsek', targetClass: 'viewKepsekCopy' }
+            ];
+
+            mappings.forEach(map => {
+                const inputEl = document.getElementById(map.input);
+                const val = inputEl.value || (inputEl.tagName === 'SELECT' ? '' : '#N/A');
+                
+                if (map.targetId) {
+                    const target = document.getElementById(map.targetId);
+                    if (target) target.innerText = val;
+                }
+                if (map.targetClass) {
+                    const targets = document.getElementsByClassName(map.targetClass);
+                    for (let t of targets) {
+                        t.innerText = val;
+                    }
+                }
+            });
+        }
+
+        // Jalankan sekali saat load agar nilai default muncul
+        window.onload = updateData;
+    </script>
+</body>
+</html>
