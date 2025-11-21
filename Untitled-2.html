@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapor TK Gelora Bangsa (Final Layout)</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* --- VARIABLES & RESET --- */
+        :root { 
+            --bg-app: #e9ecef; 
+            --bg-panel: #ffffff; 
+            --primary: #2c3e50; 
+            --accent: #3498db;
+            --border-color: #000;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Times New Roman', Times, serif; 
+            background: var(--bg-app); 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* --- PANEL KIRI: EDITOR (UI INPUT) --- */
+        .editor-panel { 
+            width: 380px; 
+            background: var(--bg-panel); 
+            padding: 0; 
+            display: flex; 
+            flex-direction: column; 
+            border-right: 1px solid #ccc; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1); 
+            z-index: 10;
+            flex-shrink: 0;
+        }
+        .editor-header {
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+        }
+        .editor-header h3 { margin: 0; font-family: Arial, sans-serif; font-size: 16px; }
+        
+        .editor-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .section-label {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; color: #555; margin-bottom: 4px; }
+        .form-group input[type="text"], 
+        .form-group input[type="number"], 
+        .form-group select, 
+        .form-group textarea { 
+            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; 
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); outline: none; }
+
+        /* Buttons */
+        .btn-action-group { display: flex; gap: 5px; margin-bottom: 15px; }
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-family: Arial; font-size: 12px; flex: 1; transition: 0.2s; }
+        .btn-new { background: #17a2b8; }
+        .btn-save { background: #28a745; }
+        .btn-del { background: #dc3545; }
+        .btn-print { background: var(--primary); width: 100%; padding: 15px; font-size: 16px; margin-top: 20px; }
+        .btn:hover { opacity: 0.9; }
+
+        /* --- PANEL KANAN: PREVIEW AREA --- */
+        .preview-area { 
+            flex-grow: 1; 
+            background: #525659;
+            padding: 20px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 20px; 
+        }
+
+        /* --- KERTAS A4 (CONTAINER UTAMA) --- */
+        .page { 
+            width: 210mm; 
+            height: 297mm; 
+            background: white; 
+            padding: 15mm; 
+            position: relative; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- TYPOGRAPHY & COMMON STYLES --- */
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .bold { font-weight: bold; }
+        .upper { text-transform: uppercase; }
+        
+        /* Watermark */
+        .watermark {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 70%; height: 70%; opacity: 0.05; z-index: 0; pointer-events: none;
+            background-image: url('Data/images/TK.png');
+            background-repeat: no-repeat; background-position: center; background-size: contain;
+        }
+
+        /* --- HALAMAN 1: COVER DESIGN --- */
+        .cover-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            border: 3px double #000;
+            padding: 20mm;
+            position: relative;
+            z-index: 1;
+        }
+        .logo-sekolah-cover { 
+            width: 120px; 
+            height: 120px; 
+            object-fit: contain; 
+            margin: 20px 0; 
+        }
+        .logo-tutwuri { width: 80px; margin-bottom: 15px; }
+        .school-name { font-size: 20pt; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px; }
+        .school-address { font-size: 10pt; margin-bottom: 5px; }
+        
+        .report-title { font-size: 18pt; font-weight: bold; margin-top: 15px; line-height: 1.4; }
+        .report-subtitle { font-size: 12pt; font-weight: bold; margin-top: 8px; }
+        
+        .student-box {
+            border: 4px double #000;
+            padding: 20px;
+            width: 80%;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .student-box h3 { font-size: 12pt; margin-bottom: 15px; font-weight: normal; }
+        .student-name-display { font-size: 22pt; font-weight: bold; margin-bottom: 12px; text-decoration: underline; }
+
+        /* --- HALAMAN 2: IDENTITAS SEKOLAH --- */
+        .bhinneka-logo {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            margin: 0 auto 15px auto;
+            display: block;
+        }
+        .school-identity {
+            margin: 20px 0;
+        }
+        .school-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 10pt;
+        }
+        .school-data-table td {
+            padding: 6px 5px;
+            vertical-align: top;
+            border-bottom: 1px solid #eee;
+        }
+        .school-data-table td:first-child {
+            width: 35%;
+            font-weight: bold;
+        }
+        .school-data-table td:nth-child(2) {
+            width: 10px;
+            text-align: center;
+        }
+
+        /* --- TABLES (DATA DIRI & NILAI) --- */
+        .tbl-bio { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10pt; }
+        .tbl-bio td { padding: 5px; vertical-align: top; }
+        .tbl-bio td:nth-child(1) { width: 35%; font-weight: bold; }
+        .tbl-bio td:nth-child(2) { width: 15px; text-align: center; }
+
+        .tbl-std { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 9pt; }
+        .tbl-std th, .tbl-std td { border: 1px solid #000; padding: 6px; }
+        .tbl-std th { background: #f0f0f0; text-align: center; font-weight: bold; }
+        .tbl-std .center { text-align: center; }
+
+        /* --- KOTAK PENILAIAN (DESKRIPSI + FOTO) --- */
+        .score-section { 
+            margin-bottom: 15px; 
+            flex: 1;
+        }
+        .score-header { 
+            background: #e0e0e0; padding: 6px 10px; font-weight: bold; 
+            border: 1px solid #000; border-bottom: none; font-size: 10pt; 
+        }
+        .score-box { 
+            border: 1px solid #000; display: flex; min-height: 150px;
+            flex: 1;
+        }
+        .score-text { 
+            flex: 7; padding: 10px; font-size: 10pt; line-height: 1.4; text-align: justify; 
+            border-right: 1px solid #000; 
+            overflow: hidden;
+        }
+        .score-photo { 
+            flex: 3; padding: 8px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; 
+        }
+        .score-photo img { 
+            max-width: 100%; max-height: 120px; object-fit: contain; 
+            border: 1px solid #ddd;
+        }
+        .photo-label { font-size: 7pt; color: #666; margin-top: 5px; font-style: italic; }
+
+        /* --- TANDA TANGAN --- */
+        .ttd-container { 
+            display: flex; justify-content: space-between; 
+            margin-top: auto;
+            padding-top: 20px;
+        }
+        .ttd-box { width: 180px; text-align: center; }
+        .ttd-space { height: 60px; border-bottom: 1px solid #000; margin: 5px 0; }
+        .ttd-name { font-weight: bold; text-decoration: underline; font-size: 10pt; }
+
+        /* --- MODAL POPUP --- */
+        .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); }
+        .modal-content { background-color: #fff; margin: 5% auto; padding: 25px; border-radius: 8px; width: 500px; font-family: Arial, sans-serif; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .close-modal { float: right; font-size: 24px; cursor: pointer; }
+
+        /* --- PRINT MODE --- */
+        @media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+    
+    body, html {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+            
+            .editor-panel,
+            .modal,
+            .preview-area {
+                display: none !important;
+            }
+            
+            .page {
+                width: 210mm !important;
+                height: 297mm !important;
+                margin: 0 !important;
+                padding: 15mm !important;
+                box-shadow: none !important;
+                page-break-after: always;
+                break-after: page;
+                position: relative;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                background: white !important;
+            }
+            
+            .page:last-child {
+                page-break-after: auto;
+            }
+            
+            .cover-container {
+                border: none !important;
+                padding: 15mm !important;
+            }
+                /* Pastikan konten terlihat */
+            .cover-container,
+            .watermark,
+            .score-box,
+            .tbl-std,
+            .ttd-container {
+                visibility: visible !important;
+                display: block !important;
+            }
+            
+            
+            /* Pastikan tidak ada scrollbar */
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        /* Untuk ukuran kertas F4 dan Letter */
+        @media print and (size: f4) {
+            @page {
+                size: 215mm 330mm;
+            }
+            .page {
+                width: 215mm !important;
+                height: 330mm !important;
+            }
+        }
+
+        @media print and (size: letter) {
+            @page {
+                size: letter;
+            }
+            .page {
+                width: 216mm !important;
+                height: 279mm !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MODAL: TAMBAH SISWA -->
+    <div id="modalReg" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h3 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px;">Tambah Siswa Baru</h3>
+            <div class="form-group"><label>Nama Lengkap</label><input type="text" id="regNama"></div>
+            <div class="form-group"><label>Nama Panggilan</label><input type="text" id="regPanggilan"></div>
+            <div class="form-group"><label>NISN / NIS</label><input type="text" id="regNis"></div>
+            <div class="form-group"><label>Jenis Kelamin</label><select id="regJk"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
+            <div class="form-group"><label>Tempat, Tanggal Lahir</label><input type="text" id="regTtl"></div>
+            <div class="form-group"><label>Agama</label><input type="text" id="regAgama" value="Islam"></div>
+            <div class="form-group"><label>Anak ke-</label><input type="text" id="regAnakKe"></div>
+            
+            <div class="section-label">Data Orang Tua</div>
+            <div class="form-group"><label>Nama Ayah</label><input type="text" id="regAyah"></div>
+            <div class="form-group"><label>Pekerjaan Ayah</label><input type="text" id="regKerjaAyah"></div>
+            <div class="form-group"><label>Nama Ibu</label><input type="text" id="regIbu"></div>
+            <div class="form-group"><label>Pekerjaan Ibu</label><input type="text" id="regKerjaIbu"></div>
+            <div class="form-group"><label>Alamat Lengkap</label><textarea id="regAlamat" rows="2"></textarea></div>
+            
+            <button class="btn btn-save" style="width:100%; margin-top:15px; padding:12px;" onclick="saveStudent()">SIMPAN DATA</button>
+        </div>
+    </div>
+
+    <!-- EDITOR (KIRI) -->
+    <div class="editor-panel">
+        <div class="editor-header">
+            <h3>🎛️ PANEL GURU</h3>
+        </div>
+        <div class="editor-content">
+            <div style="background:#f8f9fa; padding:15px; border:1px solid #ddd; border-radius:5px; margin-bottom:20px;">
+                <label style="font-weight:bold; font-size:12px; display:block; margin-bottom:5px;">Pilih Siswa:</label>
+                <select id="studentSelect" onchange="loadStudent()" style="width:100%; padding:8px; margin-bottom:10px;">
+                    <option value="">-- Pilih Nama Siswa --</option>
+                </select>
+                <div class="btn-action-group">
+                    <button class="btn btn-new" onclick="openModal()">+ Baru</button>
+                    <button class="btn btn-save" onclick="updateData()">Simpan</button>
+                    <button class="btn btn-del" onclick="deleteStudent()">Hapus</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Semester:</label>
+                <select id="inpSemester" onchange="render()">
+                    <option value="1 (Ganjil)">Semester 1 (Ganjil)</option>
+                    <option value="2 (Genap)">Semester 2 (Genap)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Foto Profil (3x4)</label>
+                <input type="file" class="file-input" onchange="handlePhoto(this, 'fotoProfil')">
+            </div>
+
+            <div class="section-label">B. Intrakurikuler</div>
+            <div class="form-group"><label>1. Agama & Budi Pekerti</label><textarea id="inpAgama" rows="2" oninput="render()" placeholder="Deskripsi pencapaian..."></textarea><input type="file" onchange="handlePhoto(this, 'fotoAgama')"></div>
+            <div class="form-group"><label>2. Jati Diri</label><textarea id="inpJati" rows="2" oninput="render()" placeholder="Deskripsi pencapaian..."></textarea><input type="file" onchange="handlePhoto(this, 'fotoJati')"></div>
+            <div class="form-group"><label>3. Literasi & STEAM</label><textarea id="inpSteam" rows="2" oninput="render()" placeholder="Deskripsi pencapaian..."></textarea><input type="file" onchange="handlePhoto(this, 'fotoSteam')"></div>
+
+            <div class="section-label">C. Kokurikuler (P5)</div>
+            <div class="form-group"><label>Deskripsi P5</label><textarea id="inpP5" rows="2" oninput="render()" placeholder="Deskripsi proyek..."></textarea><input type="file" onchange="handlePhoto(this, 'fotoP5')"></div>
+
+            <div class="section-label">D. Fisik & Kesehatan</div>
+            <div class="form-group"><label>TB (Sm 1 / Sm 2)</label><div style="display:flex; gap:5px;"><input type="text" id="inpTb1" placeholder="Sm 1"><input type="text" id="inpTb2" placeholder="Sm 2"></div></div>
+            <div class="form-group"><label>BB (Sm 1 / Sm 2)</label><div style="display:flex; gap:5px;"><input type="text" id="inpBb1" placeholder="Sm 1"><input type="text" id="inpBb2" placeholder="Sm 2"></div></div>
+            <div class="form-group"><label>Lingkar Kepala (Sm 1 / Sm 2)</label><div style="display:flex; gap:5px;"><input type="text" id="inpLk1" placeholder="Sm 1"><input type="text" id="inpLk2" placeholder="Sm 2"></div></div>
+            <div class="form-group"><label>Pendengaran</label><input type="text" id="inpHear" value="Baik" oninput="render()"></div>
+            <div class="form-group"><label>Penglihatan</label><input type="text" id="inpSee" value="Baik" oninput="render()"></div>
+            <div class="form-group"><label>Gigi</label><input type="text" id="inpTeeth" value="Sehat" oninput="render()"></div>
+
+            <div class="section-label">E. Kehadiran & Refleksi</div>
+            <div class="form-group"><label>Sakit / Izin / Alpha</label><div style="display:flex; gap:5px;"><input type="number" id="inpSakit" placeholder="Sakit"><input type="number" id="inpIzin" placeholder="Izin"><input type="number" id="inpAlpha" placeholder="Alpha"></div></div>
+            <div class="form-group"><label>Catatan Guru</label><textarea id="inpCatatan" rows="2" oninput="render()" placeholder="Catatan perkembangan anak..."></textarea></div>
+
+            <div class="form-group">
+                <label>Ukuran Kertas:</label>
+                <select id="paperSize">
+                    <option value="A4">A4 (210x297mm)</option>
+                    <option value="F4">F4 (215x330mm)</option>
+                    <option value="Letter">Letter (216x279mm)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-print" onclick="printRapor()">🖨️ CETAK SEMUA HALAMAN</button>
+        </div>
+    </div>
+
+    <!-- PREVIEW (KANAN) -->
+    <div class="preview-area">
+
+        <!-- HALAMAN 1: COVER -->
+        <div class="page">
+            <div class="cover-container">
+                <div class="text-center">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg/1200px-Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg.png" class="logo-tutwuri">
+                    <div class="school-name upper">KB - TK GELORA BANGSA</div>
+                    <div class="school-address">Jl. Kampung Baru Kubur Koja, Penjaringan, Jakarta Utara</div>
+                    <div class="school-address bold">NPSN: 69900048</div>
+                </div>
+
+                <!-- LOGO SEKOLAH -->
+                <div class="text-center">
+                    <img src="Data/images/TK.png" class="logo-sekolah-cover" alt="Logo KB - TK Gelora Bangsa">
+                </div>
+
+                <div class="text-center">
+                    <div class="report-title upper">Laporan Asesmen Capaian<br>Pembelajaran Anak Didik</div>
+                    <div class="report-subtitle">TAHUN PELAJARAN 2024 / 2025</div>
+                </div>
+
+                <div class="student-box text-center">
+                    <h3>Nama Anak Didik:</h3>
+                    <div class="student-name-display viewNama">-</div>
+                    <p style="font-size: 12pt;">NISN / NIS : <span class="viewNis bold">-</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 2: IDENTITAS SEKOLAH BARU -->
+        <div class="page">
+            <div class="watermark"></div>
+            
+            <!-- LOGO BHINNEKA TUNGGAL IKA -->
+            <div class="text-center">
+                <img src="Data/images/garuda.png" class="bhinneka-logo" alt="Bhinneka Tunggal Ika">
+            </div>
+
+            <!-- JUDUL UTAMA -->
+            <div class="text-center" style="margin: 20px 0;">
+                <h2 class="bold upper" style="font-size: 16pt; margin-bottom: 10px;">
+                    LAPORAN ASESMEN CAPAIAN PEMBELAJARAN<br>
+                    ANAK DIDIK TAMAN KANAK-KANAK
+                </h2>
+                <div style="border-bottom: 3px double #000; width: 80%; margin: 0 auto;"></div>
+            </div>
+
+            <!-- DATA SEKOLAH -->
+            <div class="school-identity">
+                <h3 class="text-center bold" style="font-size: 12pt; margin-bottom: 20px;">DATA SEKOLAH</h3>
+                
+                <table class="school-data-table">
+                    <tr><td>Nama TK</td><td>:</td><td>KB - TK GELORA BANGSA</td></tr>
+                    <tr><td>NPSN</td><td>:</td><td>69900048</td></tr>
+                    <tr><td>Alamat</td><td>:</td><td>Jl. Kampung Baru Rt 10 Rw 15</td></tr>
+                    <tr><td>Kelurahan</td><td>:</td><td>Penjaringan</td></tr>
+                    <tr><td>Kecamatan</td><td>:</td><td>Penjaringan</td></tr>
+                    <tr><td>Kabupaten / Kota</td><td>:</td><td>Jakarta Utara</td></tr>
+                    <tr><td>Provinsi</td><td>:</td><td>DKI Jakarta</td></tr>
+                    <tr><td>Email</td><td>:</td><td>gelorabangsa@gmail.com</td></tr>
+                </table>
+            </div>
+
+            <div class="ttd-container">
+                <div class="ttd-box">
+                    <p>Jakarta, 24 Februari 2025</p>
+                    <p>Kepala Sekolah</p>
+                    <div class="ttd-space"></div>
+                    <p class="ttd-name">Rina S.E</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 3: DATA DIRI ANAK -->
+        <div class="page">
+            <div class="watermark"></div>
+            <div class="text-center">
+                <h2 class="bold" style="border-bottom: 3px double #000; display: inline-block; padding-bottom: 5px; margin-bottom: 20px; font-size: 14pt;">DATA DIRI ANAK</h2>
+            </div>
+
+            <h3 style="margin-top: 15px; font-size: 12pt;">A. Identitas Anak</h3>
+            <table class="tbl-bio">
+                <tr><td>Nama Anak Didik</td><td>:</td><td class="viewNama upper bold">-</td></tr>
+                <tr><td>Nama Panggilan</td><td>:</td><td id="viewPanggilan">-</td></tr>
+                <tr><td>NISN / NIS</td><td>:</td><td class="viewNis">-</td></tr>
+                <tr><td>Jenis Kelamin</td><td>:</td><td id="viewJk">-</td></tr>
+                <tr><td>Tempat, Tanggal Lahir</td><td>:</td><td id="viewTtl">-</td></tr>
+                <tr><td>Agama</td><td>:</td><td id="viewAgama">Islam</td></tr>
+                <tr><td>Anak ke-</td><td>:</td><td id="viewAnakKe">-</td></tr>
+            </table>
+
+            <h3 style="margin-top: 20px; font-size: 12pt;">B. Identitas Orang Tua / Wali</h3>
+            <table class="tbl-bio">
+                <tr><td>Nama Ayah</td><td>:</td><td id="viewAyah">-</td></tr>
+                <tr><td>Pekerjaan Ayah</td><td>:</td><td id="viewKerjaAyah">-</td></tr>
+                <tr><td>Nama Ibu</td><td>:</td><td id="viewIbu">-</td></tr>
+                <tr><td>Pekerjaan Ibu</td><td>:</td><td id="viewKerjaIbu">-</td></tr>
+                <tr><td>Alamat Lengkap</td><td>:</td><td id="viewAlamat">-</td></tr>
+            </table>
+
+            <div class="ttd-container">
+                <div style="width: 2.5cm; height: 3.5cm; border: 1px solid #000; display:flex; align-items:center; justify-content:center; background:#fff;">
+                    <img id="viewFotoProfil" src="" style="max-width:100%; max-height:100%; display:none;">
+                    <span id="lblFoto" style="font-size:8px; color:#999;">FOTO 3x4</span>
+                </div>
+                <div class="ttd-box">
+                    <p>Jakarta, 24 Februari 2025</p>
+                    <p>Kepala Sekolah</p>
+                    <div class="ttd-space"></div>
+                    <p class="ttd-name">Rina S.E</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 4: INTRAKURIKULER -->
+        <div class="page">
+            <div class="watermark"></div>
+            <div class="text-center" style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px;">
+                <h3 style="margin:0; font-size:13pt;" class="bold">LAPORAN CAPAIAN PEMBELAJARAN</h3>
+                <p class="bold">Semester: <span id="viewSemester">1 (Ganjil)</span></p>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <h3 style="margin:0; color:var(--primary); font-size: 11pt;">A. INTRAKURIKULER</h3>
+            </div>
+
+            <!-- 1. AGAMA -->
+            <div class="score-section">
+                <div class="score-header">I. Nilai Agama dan Budi Pekerti</div>
+                <div class="score-box">
+                    <div class="score-text" id="viewAgama"></div>
+                    <div class="score-photo">
+                        <img id="viewImgAgama" src="" style="display:none;">
+                        <span class="photo-label" id="phAgama">Foto Kegiatan</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. JATI DIRI -->
+            <div class="score-section">
+                <div class="score-header">II. Jati Diri</div>
+                <div class="score-box">
+                    <div class="score-text" id="viewJati"></div>
+                    <div class="score-photo">
+                        <img id="viewImgJati" src="" style="display:none;">
+                        <span class="photo-label" id="phJati">Foto Kegiatan</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 5: STEAM & P5 -->
+        <div class="page">
+            <div class="watermark"></div>
+            <div class="text-center" style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px;">
+                <h3 style="margin:0; font-size:13pt;" class="bold">LAPORAN CAPAIAN PEMBELAJARAN</h3>
+                <p class="bold">Semester: <span id="viewSemester2">1 (Ganjil)</span></p>
+            </div>
+
+            <!-- 3. STEAM -->
+            <div class="score-section">
+                <div class="score-header">III. Literasi & STEAM</div>
+                <div class="score-box">
+                    <div class="score-text" id="viewSteam"></div>
+                    <div class="score-photo">
+                        <img id="viewImgSteam" src="" style="display:none;">
+                        <span class="photo-label" id="phSteam">Foto Kegiatan</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; margin-bottom: 12px;">
+                <h3 style="margin:0; color:var(--primary); font-size: 11pt;">B. KOKURIKULER</h3>
+            </div>
+
+            <!-- P5 -->
+            <div class="score-section">
+                <div class="score-header">I. Proyek Penguatan Profil Pelajar Pancasila (P5)</div>
+                <div class="score-box" style="min-height: 120px;">
+                    <div class="score-text" id="viewP5"></div>
+                    <div class="score-photo">
+                        <img id="viewImgP5" src="" style="display:none;">
+                        <span class="photo-label" id="phP5">Foto Kegiatan</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 6: FISIK & KESEHATAN -->
+        <div class="page">
+            <div class="watermark"></div>
+            
+            <div style="margin-bottom: 12px;">
+                <h3 style="margin:0; color:var(--primary); font-size: 11pt;">C. FISIK & KESEHATAN</h3>
+            </div>
+
+            <table class="tbl-std">
+                <tr>
+                    <th width="5%">No</th>
+                    <th width="35%">Aspek Pertumbuhan</th>
+                    <th>Semester 1</th>
+                    <th>Semester 2</th>
+                </tr>
+                <tr><td class="center">1</td><td>Tinggi Badan</td><td class="center" id="viewTb1">-</td><td class="center" id="viewTb2">-</td></tr>
+                <tr><td class="center">2</td><td>Berat Badan</td><td class="center" id="viewBb1">-</td><td class="center" id="viewBb2">-</td></tr>
+                <tr><td class="center">3</td><td>Lingkar Kepala</td><td class="center" id="viewLk1">-</td><td class="center" id="viewLk2">-</td></tr>
+            </table>
+
+            <h4 style="margin-bottom: 5px; margin-top: 15px; font-size: 10pt;">Kondisi Kesehatan:</h4>
+            <table class="tbl-std">
+                <tr><th width="5%">No</th><th>Pemeriksaan</th><th>Keterangan</th></tr>
+                <tr><td class="center">1</td><td>Pendengaran</td><td id="viewHear" class="center">Baik</td></tr>
+                <tr><td class="center">2</td><td>Penglihatan</td><td id="viewSee" class="center">Baik</td></tr>
+                <tr><td class="center">3</td><td>Gigi</td><td id="viewTeeth" class="center">Sehat</td></tr>
+            </table>
+
+            <div style="margin-top: 20px; margin-bottom: 12px;">
+                <h3 style="margin:0; color:var(--primary); font-size: 11pt;">D. TINGKAT KEHADIRAN</h3>
+            </div>
+            <table class="tbl-std" style="width: 60%;">
+                <tr><td>Sakit</td><td width="30%" class="center"><span id="viewSakit">0</span> Hari</td></tr>
+                <tr><td>Izin</td><td class="center"><span id="viewIzin">0</span> Hari</td></tr>
+                <tr><td>Tanpa Keterangan</td><td class="center"><span id="viewAlpha">0</span> Hari</td></tr>
+            </table>
+
+            <div class="ttd-container">
+                <div class="ttd-box">
+                    <p>Jakarta, 24 Februari 2025</p>
+                    <p>Guru Kelas</p>
+                    <div class="ttd-space"></div>
+                    <p class="ttd-name">RINI</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN 7: REFLEKSI & CATATAN -->
+        <div class="page">
+            <div class="watermark"></div>
+            
+            <div style="margin-bottom: 12px;">
+                <h3 style="margin:0; color:var(--primary); font-size: 11pt;">E. REFLEKSI ORANG TUA</h3>
+            </div>
+            <div style="border: 2px solid #000; border-radius: 5px; height: 100px; padding: 10px; margin-bottom: 20px;">
+                <p style="color:#888; font-style:italic; font-size: 9pt;">(Tuliskan pendapat, harapan, atau masukan Orang Tua/Wali di sini...)</p>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <h3 style="margin:0; color:var(--primary); font-size: 11pt;">CATATAN KHUSUS GURU</h3>
+            </div>
+            
+            <div class="score-section">
+                <div class="score-header">Catatan Perkembangan dan Saran</div>
+                <div class="score-box" style="min-height: 200px;">
+                    <div class="score-text" id="viewCatatan" style="width:100%; border-right:none;"></div>
+                </div>
+            </div>
+
+            <div class="ttd-container">
+                <div class="ttd-box">
+                    <p>Orang Tua / Wali</p>
+                    <div class="ttd-space"></div>
+                    <p class="ttd-name">(...................................)</p>
+                </div>
+                <div class="ttd-box">
+                    <p>Jakarta, 24 Februari 2025</p>
+                    <p>Guru Kelas</p>
+                    <div class="ttd-space"></div>
+                    <p class="ttd-name">RINI</p>
+                </div>
+            </div>
+
+            <div class="ttd-container" style="justify-content: center; margin-top: 15px;">
+                <div class="ttd-box">
+                    <p>Mengetahui,</p>
+                    <p>Kepala KB - TK Gelora Bangsa</p>
+                    <div class="ttd-space"></div>
+                    <p class="ttd-name">Rina S.E</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        const DB_KEY = 'rapor_tk_gelora_v9';
+        let students = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+
+        window.onload = function() { refreshDropdown(); }
+
+        // --- CRUD ---
+        function openModal() { document.getElementById('modalReg').style.display = 'block'; }
+        function closeModal() { document.getElementById('modalReg').style.display = 'none'; }
+
+        function saveStudent() {
+            const nama = document.getElementById('regNama').value;
+            if(!nama) return alert('Nama wajib diisi!');
+            
+            const s = {
+                id: Date.now(),
+                bio: {
+                    nama: nama, 
+                    panggilan: document.getElementById('regPanggilan').value,
+                    nis: document.getElementById('regNis').value, 
+                    jk: document.getElementById('regJk').value,
+                    ttl: document.getElementById('regTtl').value, 
+                    agama: document.getElementById('regAgama').value,
+                    anakKe: document.getElementById('regAnakKe').value,
+                    ayah: document.getElementById('regAyah').value,
+                    ibu: document.getElementById('regIbu').value,
+                    kerjaAyah: document.getElementById('regKerjaAyah').value,
+                    kerjaIbu: document.getElementById('regKerjaIbu').value,
+                    alamat: document.getElementById('regAlamat').value
+                },
+                data: {}, // Untuk data nilai, dll
+                fotos: {}
+            };
+            students.push(s);
+            saveLocal();
+            closeModal();
+            refreshDropdown();
+            document.getElementById('studentSelect').value = s.id;
+            loadStudent();
+        }
+
+        function loadStudent() {
+            const id = document.getElementById('studentSelect').value;
+            if(!id) return;
+            const s = students.find(x => x.id == id);
+            const d = s.data || {};
+
+            // Load Input
+            setVal('inpSemester', d.semester || '1 (Ganjil)');
+            setVal('inpAgama', d.agama); 
+            setVal('inpJati', d.jati); 
+            setVal('inpSteam', d.steam); 
+            setVal('inpP5', d.p5);
+            setVal('inpTb1', d.tb1); 
+            setVal('inpTb2', d.tb2);
+            setVal('inpBb1', d.bb1); 
+            setVal('inpBb2', d.bb2);
+            setVal('inpLk1', d.lk1); 
+            setVal('inpLk2', d.lk2);
+            setVal('inpHear', d.hear || 'Baik'); 
+            setVal('inpSee', d.see || 'Baik'); 
+            setVal('inpTeeth', d.teeth || 'Sehat');
+            setVal('inpSakit', d.sakit); 
+            setVal('inpIzin', d.izin); 
+            setVal('inpAlpha', d.alpha);
+            setVal('inpCatatan', d.catatan);
+
+            // Load Images
+            renderImg('viewImgAgama', 'phAgama', s.fotos.fotoAgama);
+            renderImg('viewImgJati', 'phJati', s.fotos.fotoJati);
+            renderImg('viewImgSteam', 'phSteam', s.fotos.fotoSteam);
+            renderImg('viewImgP5', 'phP5', s.fotos.fotoP5);
+            
+            // Foto Profil Logic
+            const imgP = document.getElementById('viewFotoProfil');
+            const lblP = document.getElementById('lblFoto');
+            if(s.fotos.fotoProfil) { 
+                imgP.src = s.fotos.fotoProfil; 
+                imgP.style.display='block'; 
+                lblP.style.display='none'; 
+            } else { 
+                imgP.style.display='none'; 
+                lblP.style.display='block'; 
+            }
+
+            render();
+        }
+
+        function updateData() {
+            const id = document.getElementById('studentSelect').value;
+            if(!id) return;
+            const idx = students.findIndex(x => x.id == id);
+            
+            students[idx].data = {
+                semester: getVal('inpSemester'),
+                agama: getVal('inpAgama'), 
+                jati: getVal('inpJati'), 
+                steam: getVal('inpSteam'), 
+                p5: getVal('inpP5'),
+                tb1: getVal('inpTb1'), 
+                tb2: getVal('inpTb2'), 
+                bb1: getVal('inpBb1'), 
+                bb2: getVal('inpBb2'),
+                lk1: getVal('inpLk1'), 
+                lk2: getVal('inpLk2'),
+                hear: getVal('inpHear'), 
+                see: getVal('inpSee'), 
+                teeth: getVal('inpTeeth'),
+                sakit: getVal('inpSakit'), 
+                izin: getVal('inpIzin'), 
+                alpha: getVal('inpAlpha'),
+                catatan: getVal('inpCatatan')
+            };
+            saveLocal();
+            alert('Data Tersimpan!');
+        }
+
+        function render() {
+            const id = document.getElementById('studentSelect').value;
+            if(!id) return;
+            const s = students.find(x => x.id == id);
+            const d = s.data || {};
+
+            // Bio
+            setText('viewNama', s.bio.nama); 
+            setText('viewPanggilan', s.bio.panggilan);
+            setText('viewNis', s.bio.nis); 
+            setText('viewJk', s.bio.jk=='L'?'Laki-laki':'Perempuan');
+            setText('viewTtl', s.bio.ttl); 
+            setText('viewAyah', s.bio.ayah); 
+            setText('viewIbu', s.bio.ibu);
+            setText('viewAgama', s.bio.agama);
+            setText('viewAnakKe', s.bio.anakKe);
+            setText('viewKerjaAyah', s.bio.kerjaAyah);
+            setText('viewKerjaIbu', s.bio.kerjaIbu);
+            setText('viewAlamat', s.bio.alamat);
+            
+            // Data
+            setText('viewSemester', getVal('inpSemester'));
+            setText('viewSemester2', getVal('inpSemester'));
+            setText('viewAgama', getVal('inpAgama')); 
+            setText('viewJati', getVal('inpJati'));
+            setText('viewSteam', getVal('inpSteam')); 
+            setText('viewP5', getVal('inpP5'));
+            setText('viewCatatan', getVal('inpCatatan'));
+            
+            setText('viewTb1', getVal('inpTb1')); 
+            setText('viewTb2', getVal('inpTb2'));
+            setText('viewBb1', getVal('inpBb1')); 
+            setText('viewBb2', getVal('inpBb2'));
+            setText('viewLk1', getVal('inpLk1')); 
+            setText('viewLk2', getVal('inpLk2'));
+            setText('viewHear', getVal('inpHear')); 
+            setText('viewSee', getVal('inpSee')); 
+            setText('viewTeeth', getVal('inpTeeth'));
+            setText('viewSakit', getVal('inpSakit')||0); 
+            setText('viewIzin', getVal('inpIzin')||0); 
+            setText('viewAlpha', getVal('inpAlpha')||0);
+        }
+
+        function handlePhoto(input, key) {
+            const id = document.getElementById('studentSelect').value;
+            if(!id || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const idx = students.findIndex(x => x.id == id);
+                students[idx].fotos[key] = e.target.result;
+                saveLocal();
+                loadStudent(); // Refresh images
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        // Print function yang optimal
+        function printRapor() {
+            const paperSize = document.getElementById('paperSize').value;
+            
+            // Tambahkan CSS untuk ukuran kertas yang dipilih
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @media print {
+                    @page {
+                        size: ${paperSize};
+                        margin: 0;
+                    }
+                    body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    .page {
+                        page-break-after: auto;
+                    }
+                    .page:last-child {
+                        page-break-after: auto;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            window.print();
+            
+            // Hapus style setelah print
+            setTimeout(() => {
+                document.head.removeChild(style);
+            }, 100);
+        }
+
+        // Helpers
+        function getVal(id) { return document.getElementById(id).value; }
+        function setVal(id, val) { document.getElementById(id).value = val || ''; }
+        function setText(cls, val) { 
+            const els = document.getElementsByClassName(cls);
+            for(let e of els) e.innerText = val || '-';
+            const el = document.getElementById(cls); 
+            if(el) el.innerText = val || '-';
+        }
+        function renderImg(imgId, phId, src) {
+            const img = document.getElementById(imgId);
+            const ph = document.getElementById(phId);
+            if(src) { 
+                img.src = src; 
+                img.style.display='block'; 
+                if(ph) ph.style.display='none'; 
+            } else { 
+                img.style.display='none'; 
+                if(ph) ph.style.display='block'; 
+            }
+        }
+        function saveLocal() { localStorage.setItem(DB_KEY, JSON.stringify(students)); }
+        function refreshDropdown() {
+            const sel = document.getElementById('studentSelect');
+            sel.innerHTML = '<option value="">-- Pilih Nama Siswa --</option>';
+            students.forEach(s => {
+                let opt = document.createElement('option');
+                opt.value = s.id; 
+                opt.text = s.bio.nama; 
+                sel.appendChild(opt);
+            });
+        }
+        function deleteStudent() {
+            const id = document.getElementById('studentSelect').value;
+            if(!id) return;
+            if(confirm('Hapus siswa ini?')) {
+                students = students.filter(x => x.id != id);
+                saveLocal();
+                refreshDropdown();
+                location.reload();
+            }
+        }
+
+        // PWA SERVICE WORKER
+        if ('serviceWorker' in navigator) {
+             navigator.serviceWorker.register('sw.js').then(function(reg) {
+                console.log('Service Worker Registered', reg);
+             }).catch(function(err) {
+                console.log('Service Worker Failed', err);
+             });
+        }
+    </script>
+    
+    <!-- MANIFEST OTOMATIS (Agar bisa install) -->
+    <script>
+        const manifest = {
+            "name": "Rapor TK Gelora Bangsa",
+            "short_name": "RaporTK",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#2c3e50",
+            "icons": [
+                { "src": "https://via.placeholder.com/192", "sizes": "192x192", "type": "image/png" }
+            ]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        document.querySelector('link[rel="manifest"]').href = URL.createObjectURL(blob);
+    </script>
+
+</body>
+</html>
